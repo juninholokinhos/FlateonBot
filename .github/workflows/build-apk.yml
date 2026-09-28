@@ -1,0 +1,51 @@
+name: Gerar APK Flateon
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar arquivos
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Encontrar e extrair ZIP
+        run: |
+          mkdir projeto
+          unzip -o *.zip -d projeto
+
+      - name: Procurar projeto Android
+        run: |
+          echo "Procurando projeto Android..."
+          find projeto -name "gradlew" -type f
+
+      - name: Dar permissao ao Gradle
+        run: |
+          chmod +x $(find projeto -name "gradlew" -type f | head -1)
+
+      - name: Compilar APK
+        run: |
+          GRADLEW=$(find projeto -name "gradlew" -type f | head -1)
+          cd "$(dirname "$GRADLEW")"
+          ./gradlew assembleDebug
+
+      - name: Encontrar APK
+        run: |
+          find projeto -type f -name "*.apk"
+
+      - name: Salvar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlateonBot-APK
+          path: projeto/**/*.apk
